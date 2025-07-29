@@ -44,13 +44,28 @@ BACKEND_PORT="3001"
 NODE_VERSION="18"
 USE_SSL=false
 
-# Detect if domain is an IP address or localhost
+# Determine SSL configuration based on domain/IP
 if [[ $DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || [[ $DOMAIN == "localhost" ]] || [[ $DOMAIN == "127.0.0.1" ]]; then
-    USE_SSL=false
-    echo -e "${YELLOW}[INFO]${NC} Detected IP address or localhost. SSL will be disabled."
+    # For IP addresses, offer choice between HTTP and HTTPS with self-signed certificate
+    echo -e "${YELLOW}[INFO]${NC} Detected IP address or localhost."
+    echo -e "${CYAN}SSL Options:${NC}"
+    echo -e "  1) HTTP only (no SSL)"
+    echo -e "  2) HTTPS with self-signed certificate (recommended for local networks)"
+    read -p "Choose SSL option (1 or 2, default: 2): " ssl_choice
+    
+    if [[ $ssl_choice == "1" ]]; then
+        USE_SSL=false
+        SSL_TYPE="none"
+        echo -e "${YELLOW}[INFO]${NC} SSL disabled. Using HTTP only."
+    else
+        USE_SSL=true
+        SSL_TYPE="self-signed"
+        echo -e "${GREEN}[INFO]${NC} SSL enabled with self-signed certificate."
+    fi
 else
     USE_SSL=true
-    echo -e "${GREEN}[INFO]${NC} Detected domain name. SSL will be enabled."
+    SSL_TYPE="letsencrypt"
+    echo -e "${GREEN}[INFO]${NC} Detected domain name. SSL will be enabled with Let's Encrypt."
 fi
 
 # Log functions
@@ -92,6 +107,9 @@ print_deployment_info() {
     echo -e "${CYAN}Email:${NC} $EMAIL"
     echo -e "${CYAN}Database:${NC} $DB_NAME"
     echo -e "${CYAN}SSL Enabled:${NC} $USE_SSL"
+    if [[ $USE_SSL == true ]]; then
+        echo -e "${CYAN}SSL Type:${NC} $SSL_TYPE"
+    fi
     echo -e "${CYAN}Backend Port:${NC} $BACKEND_PORT"
     echo ""
     
@@ -238,48 +256,99 @@ deploy_application() {
     log_header "DEPLOYING APPLICATION CODE"
     
     # Copy application files (assuming script is run from project root)
+    log_info "Copying application files to $APP_DIR..."
     cp -r . $APP_DIR/
     
+    # Verify critical directories exist
+    if [ ! -d "$APP_DIR/backend" ]; then
+        log_error "Backend directory not found after copying"
+        exit 1
+    fi
+    
+    if [ ! -d "$APP_DIR/frontend" ]; then
+        log_error "Frontend directory not found after copying"
+        exit 1
+    fi
+    
     # Remove development and unnecessary files
+    log_info "Cleaning up unnecessary files..."
     rm -rf $APP_DIR/node_modules
     rm -rf $APP_DIR/frontend/node_modules
     rm -rf $APP_DIR/backend/node_modules
     rm -rf $APP_DIR/frontend/dist
     rm -rf $APP_DIR/.git
-    rm -f $APP_DIR/deploy-ubuntu-production.sh
+    rm -f $APP_DIR/scripts/deploy-ubuntu-production.sh
     rm -rf $APP_DIR/.claude
     
     # Preserve only .docx templates
-    find $APP_DIR -name "*.log" -delete
-    find $APP_DIR -name "*.tmp" -delete
-    find $APP_DIR -name ".DS_Store" -delete
+    find $APP_DIR -name "*.log" -delete 2>/dev/null || true
+    find $APP_DIR -name "*.tmp" -delete 2>/dev/null || true
+    find $APP_DIR -name ".DS_Store" -delete 2>/dev/null || true
     
     # Set proper ownership
     chown -R $APP_NAME:www-data $APP_DIR
     
-    log_success "Application code deployed"
+    # Verify package.json files exist
+    log_info "Verifying project structure..."
+    if [ -f "$APP_DIR/package.json" ]; then
+        log_success "Root package.json found"
+    else
+        log_warning "No root package.json found (this is normal for this project)"
+    fi
+    
+    if [ -f "$APP_DIR/backend/package.json" ]; then
+        log_success "Backend package.json found"
+    else
+        log_error "Backend package.json missing - deployment cannot continue"
+        exit 1
+    fi
+    
+    if [ -f "$APP_DIR/frontend/package.json" ]; then
+        log_success "Frontend package.json found"
+    else
+        log_error "Frontend package.json missing - deployment cannot continue"
+        exit 1
+    fi
+    
+    log_success "Application code deployed successfully"
 }
 
 # Install application dependencies
 install_dependencies() {
     log_header "INSTALLING APPLICATION DEPENDENCIES"
     
-    cd $APP_DIR
-    
-    # Install root level dependencies
-    sudo -u $APP_NAME npm install --production
-    log_success "Root dependencies installed"
+    # Check if root package.json exists, if not, skip root level installation
+    if [ -f "$APP_DIR/package.json" ]; then
+        log_info "Installing root level dependencies..."
+        cd $APP_DIR
+        sudo -u $APP_NAME npm install --omit=dev
+        log_success "Root dependencies installed"
+    else
+        log_info "No root package.json found, skipping root level dependencies"
+    fi
     
     # Install backend dependencies
-    cd $APP_DIR/backend
-    sudo -u $APP_NAME npm install --production
-    log_success "Backend dependencies installed"
+    if [ -f "$APP_DIR/backend/package.json" ]; then
+        log_info "Installing backend dependencies..."
+        cd $APP_DIR/backend
+        sudo -u $APP_NAME npm install --omit=dev
+        log_success "Backend dependencies installed"
+    else
+        log_error "Backend package.json not found at $APP_DIR/backend/package.json"
+        exit 1
+    fi
     
     # Install frontend dependencies and build
-    cd $APP_DIR/frontend
-    sudo -u $APP_NAME npm install
-    sudo -u $APP_NAME npm run build
-    log_success "Frontend built successfully"
+    if [ -f "$APP_DIR/frontend/package.json" ]; then
+        log_info "Installing frontend dependencies and building..."
+        cd $APP_DIR/frontend
+        sudo -u $APP_NAME npm install
+        sudo -u $APP_NAME npm run build
+        log_success "Frontend built successfully"
+    else
+        log_error "Frontend package.json not found at $APP_DIR/frontend/package.json"
+        exit 1
+    fi
 }
 
 # Configure environment files
@@ -324,9 +393,14 @@ DEBUG=false
 EOF
     
     # Create frontend .env file
+    local PROTOCOL="http"
+    if [[ $USE_SSL == true ]]; then
+        PROTOCOL="https"
+    fi
+    
     cat > $APP_DIR/frontend/.env << EOF
 # Production Frontend Environment
-VITE_API_URL=http://$DOMAIN/api
+VITE_API_URL=${PROTOCOL}://$DOMAIN/api
 VITE_APP_TITLE=ULT FPEB UPI - Sistem Manajemen Pengunjung
 
 # Production Configuration
@@ -547,9 +621,9 @@ EOF
     configure_nginx_common
 }
 
-# Configure Nginx with SSL
-configure_nginx_https() {
-    log_header "CONFIGURING NGINX WITH SSL"
+# Configure Nginx with Let's Encrypt SSL
+configure_nginx_letsencrypt() {
+    log_header "CONFIGURING NGINX WITH LET'S ENCRYPT SSL"
     
     # Create temporary HTTP configuration for SSL certificate generation
     cat > /etc/nginx/sites-available/$APP_NAME << EOF
@@ -695,7 +769,145 @@ EOF
     
     # Reload Nginx to apply SSL configuration
     nginx -t && systemctl reload nginx
-    log_success "SSL certificate generated and configured"
+    log_success "Let's Encrypt SSL certificate generated and configured"
+}
+
+# Configure Nginx with self-signed SSL
+configure_nginx_selfsigned() {
+    log_header "CONFIGURING NGINX WITH SELF-SIGNED SSL"
+    
+    # Generate self-signed certificate first
+    generate_self_signed_certificate
+    
+    # Create HTTPS configuration with self-signed certificate
+    cat > /etc/nginx/sites-available/$APP_NAME << EOF
+server {
+    listen 80;
+    server_name $DOMAIN;
+    
+    # Redirect HTTP to HTTPS
+    return 301 https://\$server_name\$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name $DOMAIN;
+    
+    # Self-signed SSL Configuration
+    ssl_certificate /etc/nginx/ssl/$APP_NAME.crt;
+    ssl_certificate_key /etc/nginx/ssl/$APP_NAME.key;
+    
+    # SSL settings for self-signed certificate
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384;
+    ssl_ecdh_curve secp384r1;
+    ssl_session_timeout 10m;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+    
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:;" always;
+    
+    # Set maximum upload size
+    client_max_body_size 20M;
+    
+    # Serve static files (frontend build)
+    location / {
+        root $APP_DIR/frontend/dist;
+        index index.html;
+        try_files \$uri \$uri/ /index.html;
+        
+        # Cache static assets
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|pdf|docx)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            access_log off;
+        }
+    }
+    
+    # API proxy to backend
+    location /api/ {
+        proxy_pass http://localhost:$BACKEND_PORT/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
+        proxy_send_timeout 300s;
+        
+        # Handle large uploads
+        client_max_body_size 20M;
+        proxy_request_buffering off;
+    }
+    
+    # Upload files
+    location /uploads/ {
+        alias $APP_DIR/backend/uploads/;
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+        access_log off;
+    }
+    
+    # Health check endpoint
+    location /health {
+        proxy_pass http://localhost:$BACKEND_PORT/api/health;
+        access_log off;
+    }
+    
+    # Security: Hide sensitive files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+    
+    location ~ \.(env|log|json|md|txt|sql)$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+    
+    # Prevent access to node_modules
+    location ~ /node_modules/ {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+    
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/javascript
+        application/xml+rss
+        application/json
+        application/x-javascript
+        font/truetype
+        font/opentype
+        image/svg+xml;
+}
+EOF
+    
+    configure_nginx_common
+    log_success "Self-signed SSL certificate configured"
 }
 
 # Common Nginx configuration tasks
@@ -748,9 +960,65 @@ configure_firewall() {
     log_success "Firewall configured"
 }
 
+# Generate self-signed SSL certificate for IP address
+generate_self_signed_certificate() {
+    log_header "GENERATING SELF-SIGNED SSL CERTIFICATE"
+    
+    # Create SSL directory
+    mkdir -p /etc/nginx/ssl
+    
+    # Generate private key
+    log_info "Generating private key..."
+    openssl genrsa -out /etc/nginx/ssl/$APP_NAME.key 2048
+    
+    # Create certificate signing request config
+    cat > /tmp/cert.conf << EOF
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+req_extensions = req_ext
+distinguished_name = dn
+
+[dn]
+C=ID
+ST=West Java
+L=Bandung
+O=ULT FPEB UPI
+OU=IT Department
+CN=$DOMAIN
+
+[req_ext]
+subjectAltName = @alt_names
+
+[alt_names]
+IP.1 = $DOMAIN
+DNS.1 = localhost
+DNS.2 = $DOMAIN
+EOF
+
+    # Generate certificate
+    log_info "Generating self-signed certificate..."
+    openssl req -new -x509 -key /etc/nginx/ssl/$APP_NAME.key \
+        -out /etc/nginx/ssl/$APP_NAME.crt \
+        -days 365 \
+        -config /tmp/cert.conf
+    
+    # Set proper permissions
+    chmod 600 /etc/nginx/ssl/$APP_NAME.key
+    chmod 644 /etc/nginx/ssl/$APP_NAME.crt
+    
+    # Clean up temp files
+    rm -f /tmp/cert.conf
+    
+    log_success "Self-signed certificate generated"
+    log_warning "Certificate is valid for 1 year. Remember to renew before expiration."
+    log_warning "Browser will show security warning for self-signed certificate - this is normal."
+}
+
 # Setup automatic SSL renewal
 setup_ssl_renewal() {
-    if [[ $USE_SSL == true ]]; then
+    if [[ $USE_SSL == true && $SSL_TYPE == "letsencrypt" ]]; then
         log_header "SETTING UP SSL CERTIFICATE AUTO-RENEWAL"
         
         # Test certificate renewal
@@ -763,6 +1031,9 @@ setup_ssl_renewal() {
 EOF
         
         log_success "SSL auto-renewal configured"
+    elif [[ $USE_SSL == true && $SSL_TYPE == "self-signed" ]]; then
+        log_info "Self-signed certificate renewal must be done manually"
+        log_info "Certificate expires in 1 year from today"
     fi
 }
 
@@ -925,6 +1196,9 @@ print_summary() {
     echo -e "  • Backend Port: $BACKEND_PORT"
     echo -e "  • Domain: $DOMAIN"
     echo -e "  • SSL Enabled: $USE_SSL"
+    if [[ $USE_SSL == true ]]; then
+        echo -e "  • SSL Type: $SSL_TYPE"
+    fi
     
     if [[ $USE_SSL == true ]]; then
         echo -e "  • Web URL: https://$DOMAIN"
@@ -956,8 +1230,12 @@ print_summary() {
     echo -e "  • Regular backups should be configured for the database"
     echo -e "  • Monitor application logs regularly"
     
-    if [[ $USE_SSL == true ]]; then
+    if [[ $USE_SSL == true && $SSL_TYPE == "letsencrypt" ]]; then
         echo -e "  • SSL certificate will auto-renew via cron job"
+    elif [[ $USE_SSL == true && $SSL_TYPE == "self-signed" ]]; then
+        echo -e "  • Self-signed certificate is valid for 1 year - set calendar reminder to renew"
+        echo -e "  • Browser will show security warning - add exception or import certificate"
+        echo -e "  • Certificate files: /etc/nginx/ssl/$APP_NAME.crt and /etc/nginx/ssl/$APP_NAME.key"
     else
         echo -e "  • Consider setting up SSL with a proper domain name"
     fi
@@ -992,8 +1270,11 @@ main() {
     configure_pm2
     
     # Configure Nginx based on SSL preference
-    if [[ $USE_SSL == true ]]; then
-        configure_nginx_https
+    if [[ $USE_SSL == true && $SSL_TYPE == "letsencrypt" ]]; then
+        configure_nginx_letsencrypt
+        setup_ssl_renewal
+    elif [[ $USE_SSL == true && $SSL_TYPE == "self-signed" ]]; then
+        configure_nginx_selfsigned
         setup_ssl_renewal
     else
         configure_nginx_http
