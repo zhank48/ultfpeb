@@ -1,0 +1,78 @@
+{
+  "name": "ult-fpeb-visitor-management",
+  "version": "1.0.4",
+  "description": "ULT FPEB Visitor Management System - Full Stack Application",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:backend-only": "cd backend && npm run dev",
+    "dev:frontend-only": "cd frontend && npm run dev",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:frontend": "npm run start --workspace=frontend",
+    "start:backend": "npm run start --workspace=backend",
+    "build": "npm run build --workspace=frontend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:production": "npm run build:frontend && npm run build:backend",
+    "build:backend": "echo 'Backend does not require build step'",
+    "install:all": "npm install && npm install --workspace=frontend && npm install --workspace=backend",
+    "clean": "npm run clean:frontend && npm run clean:backend",
+    "clean:frontend": "cd frontend && rd /s /q node_modules dist 2>nul || true",
+    "clean:backend": "cd backend && rd /s /q node_modules 2>nul || true",
+    "clean:uploads": "cd backend && rd /s /q uploads 2>nul || mkdir uploads",
+    "lint": "npm run lint --workspace=frontend",
+    "lint:fix": "npm run lint --workspace=frontend -- --fix",
+    "test": "npm run test --workspace=frontend",
+    "setup-db": "npm run setup-db --workspace=backend",
+    "setup-db:dev": "cd backend && npm run setup-db",
+    "seed": "npm run seed --workspace=backend",
+    "reset-db": "npm run reset-db --workspace=backend",
+    "check-db": "npm run check-db --workspace=backend",
+    "env:dev": "npm run env:dev --workspace=backend && npm run env:dev --workspace=frontend",
+    "env:prod": "npm run env:prod --workspace=backend && npm run env:prod --workspace=frontend",
+    "setup:dev": "node -e \"console.log('Run: .\\\\setup-development.ps1 (Windows) or ./setup-development.sh (Linux/Mac)')\"",
+    "logs": "cd backend && npm run logs",
+    "logs:error": "cd backend && npm run logs:error",
+    "migrate": "node scripts/database-migration.js",
+    "migrate:fresh": "node scripts/database-migration.js",
+    "seed:admin": "node scripts/seed-admin.js",
+    "migrate:prod": "node migrate-visitor-management.js --database=ult_fpeb_db",
+    "migrate:help": "node migrate-visitor-management.js --help",
+    "migrate:debug": "node migrate-simple.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "visitor-management",
+    "university",
+    "react",
+    "express",
+    "mysql",
+    "jwt",
+    "tailwindcss"
+  ],
+  "author": "ULT FPEB Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ult-fpeb-visitor-management.git"
+  },
+  "deploymentId": "deploy-1751421070727",
+  "lastDeployment": "2025-07-02T01:51:10.731Z",
+  "dependencies": {
+    "axios": "^1.10.0",
+    "mysql2": "^3.14.1",
+    "node-fetch": "^3.3.2"
+  }
+}

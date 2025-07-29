@@ -1,0 +1,182 @@
+# ================================================================
+# ULT FPEB Visitor Management System - .gitignore
+# ================================================================
+
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files (sensitive)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+/frontend/dist/
+/frontend/build/
+/backend/dist/
+/backend/build/
+
+# Logs
+/backend/logs/
+*.log
+logs/
+combined.log
+error.log
+combined-*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# File uploads (user generated content) - Exclude all except templates
+/backend/uploads/**/*
+!/backend/uploads/.gitkeep
+!/backend/uploads/*/README.md
+
+# Keep DOCX templates (important for document generation)
+!/backend/templates/*.docx
+!/backend/templates/*.txt
+
+# Temporary files
+.tmp/
+temp/
+*.tmp
+*.temp
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE/Editor files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Database files (local development)
+*.sqlite
+*.sqlite3
+*.db
+
+# MySQL dumps
+*.sql.backup
+database-exports/local_*.sql
+
+# PM2 runtime files
+.pm2/
+
+# Package lock files (choose one)
+# package-lock.json
+# yarn.lock
+
+# Additional backup files
+*.bak
+*.backup
+*.old
+
+# SSL certificates (if any)
+*.key
+*.crt
+*.pem
+*.p12
+*.pfx
+
+# Docker
+.dockerignore
+Dockerfile.dev
+
+# Generated documentation
+/docs/generated/
+
+# Test files
+/test/tmp/
+/test/version_tmp/
+
+# Backend specific
+/backend/.env.backup
+/backend/sessions/
+
+# Frontend specific
+/frontend/.env.backup
+/frontend/dist-ssr/
+/frontend/vite.config.js.timestamp-*
+
+# Production build artifacts
+/build/
+/dist/
+
+# Deployment files and sensitive configs
+deploy-ubuntu.sh
+deploy-ubuntu-production.sh
+mysql_credentials.txt
+.claude/
+
+# Additional security files
+*.backup
+checkout-debug.log
+
+# Keep important project files
+!README.md
+!CLAUDE.md
+!README-MIGRATION.md

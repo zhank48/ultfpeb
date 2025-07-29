@@ -1,0 +1,127 @@
+/* SweetAlert2 Custom Styles for ULT FPEB Project */
+
+/* Custom popup styling */
+.swal2-popup-custom {
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+  border: none !important;
+}
+
+/* Custom title styling */
+.swal2-title-custom {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  color: #2c3e50 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Custom content styling */
+.swal2-content-custom {
+  font-size: 1rem !important;
+  color: #495057 !important;
+  line-height: 1.5 !important;
+}
+
+/* Custom confirm button */
+.swal2-confirm-custom {
+  background-color: #0d6efd !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.swal2-confirm-custom:hover {
+  background-color: #0b5ed7 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Custom cancel button */
+.swal2-cancel-custom {
+  background-color: #6c757d !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.swal2-cancel-custom:hover {
+  background-color: #5c636a !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Success button color override */
+.swal2-confirm-custom.swal2-styled.swal2-confirm {
+  background-color: #198754 !important;
+}
+
+.swal2-confirm-custom.swal2-styled.swal2-confirm:hover {
+  background-color: #157347 !important;
+}
+
+/* Error button color override */
+.swal2-popup .swal2-styled.swal2-confirm[style*="background-color: rgb(220, 53, 69)"] {
+  background-color: #dc3545 !important;
+}
+
+/* Toast positioning and styling */
+.swal2-toast {
+  border-radius: 6px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Loading spinner styling */
+.swal2-loading {
+  border-color: #0d6efd transparent #0d6efd transparent !important;
+}
+
+/* Icon styling */
+.swal2-icon {
+  border: none !important;
+  margin: 0.5rem auto 1rem auto !important;
+}
+
+.swal2-icon.swal2-success {
+  color: #198754 !important;
+}
+
+.swal2-icon.swal2-error {
+  color: #dc3545 !important;
+}
+
+.swal2-icon.swal2-warning {
+  color: #ffc107 !important;
+}
+
+.swal2-icon.swal2-info {
+  color: #0dcaf0 !important;
+}
+
+.swal2-icon.swal2-question {
+  color: #6f42c1 !important;
+}
+
+/* Timer progress bar */
+.swal2-timer-progress-bar {
+  background-color: #0d6efd !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .swal2-popup-custom {
+    margin: 1rem !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+  
+  .swal2-title-custom {
+    font-size: 1.25rem !important;
+  }
+  
+  .swal2-content-custom {
+    font-size: 0.9rem !important;
+  }
+}
