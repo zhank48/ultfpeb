@@ -3,8 +3,8 @@
 -- Complete database schema for production deployment
 -- ================================================
 
--- Set database settings
-SET sql_mode = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+-- Set database settings (compatible with MySQL 8.0+)
+SET sql_mode = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Create database if not exists (handled by deployment script)
