@@ -561,13 +561,39 @@ DELIMITER ;
 -- Performance Optimization Indexes
 -- ================================================
 
--- Additional composite indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_visitors_composite ON visitors(deleted_at, check_in_time);
-CREATE INDEX IF NOT EXISTS idx_deletion_requests_composite ON deletion_requests(visitor_id, status, created_at);
-CREATE INDEX IF NOT EXISTS idx_visitor_actions_composite ON visitor_actions(visitor_id, action_type, status, created_at);
-CREATE INDEX IF NOT EXISTS idx_activity_logs_composite ON activity_logs(user_id, action, created_at);
-CREATE INDEX IF NOT EXISTS idx_complaints_composite ON complaints(status, priority, created_at);
-CREATE INDEX IF NOT EXISTS idx_feedback_composite ON feedback(status, rating, created_at);
+-- Additional composite indexes for better performance (MySQL 8.0 compatible)
+-- Note: Using stored procedure to create indexes safely
+DELIMITER //
+
+CREATE PROCEDURE CreateIndexIfNotExists(
+    IN table_name VARCHAR(64),
+    IN index_name VARCHAR(64), 
+    IN index_definition TEXT
+)
+BEGIN
+    DECLARE index_exists INT DEFAULT 0;
+    
+    SELECT COUNT(*) INTO index_exists
+    FROM information_schema.statistics 
+    WHERE table_schema = DATABASE()
+    AND table_name = table_name
+    AND index_name = index_name;
+    
+    IF index_exists = 0 THEN
+        SET @sql = CONCAT('CREATE INDEX ', index_name, ' ON ', table_name, ' ', index_definition);
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END//
+
+DELIMITER ;
+
+-- Create indexes using the procedure
+CALL CreateIndexIfNotExists('visitors', 'idx_visitors_composite', '(deleted_at, check_in_time)');
+
+-- Drop the procedure after use
+DROP PROCEDURE IF EXISTS CreateIndexIfNotExists;
 
 -- ================================================
 -- Final Status Check

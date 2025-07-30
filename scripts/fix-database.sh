@@ -43,7 +43,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 log "Fixing database initialization..."
 
-# Create fixed database initialization script
+# Use simple database initialization
+if [[ -f "$SCRIPT_DIR/simple-database-init.sql" ]]; then
+    log "Using simple database initialization..."
+    mysql -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < "$SCRIPT_DIR/simple-database-init.sql"
+    
+    if [[ $? -eq 0 ]]; then
+        log "Simple database initialization completed successfully!"
+        log "Database fix completed. You can now continue with the deployment."
+        exit 0
+    fi
+fi
+
+# Fallback: Create fixed database initialization script inline
+log "Using fallback database initialization..."
 cat > /tmp/database-init-fixed.sql << 'EOF'
 -- ================================================
 -- ULT FPEB Visitor Management Database Initialization (MySQL 8.0 Compatible)
@@ -200,6 +213,11 @@ INSERT IGNORE INTO configurations (type, name, is_active, sort_order) VALUES
 ('person_to_meet', 'Koordinator PKL', TRUE, 31),
 ('person_to_meet', 'Koordinator KKN', TRUE, 32),
 ('person_to_meet', 'Lainnya', TRUE, 99);
+
+-- Create basic indexes (ignore errors if they exist)
+CREATE INDEX idx_visitors_check_in ON visitors(check_in_time);
+CREATE INDEX idx_visitors_status ON visitors(status);
+CREATE INDEX idx_visitors_deleted ON visitors(deleted_at);
 
 -- Verify tables created
 SELECT 'Database tables created successfully!' as status,
