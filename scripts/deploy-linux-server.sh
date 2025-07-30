@@ -218,8 +218,27 @@ setup_app_directory() {
     # Copy project files
     if [[ -d "$PROJECT_ROOT" ]]; then
         log "Copying project files..."
+        
+        # Install rsync if not available
+        if ! command -v rsync &> /dev/null; then
+            log "Installing rsync..."
+            apt-get install -y rsync
+        fi
+        
+        # Use rsync to copy files
         rsync -av --exclude='node_modules' --exclude='.git' --exclude='*.log' \
               "$PROJECT_ROOT/" "$APP_DIR/"
+    else
+        log "Project root directory not found, setting up minimal structure..."
+        
+        # Create minimal backend structure
+        mkdir -p "$APP_DIR/backend/src"
+        mkdir -p "$APP_DIR/frontend/src"
+        
+        # Copy only the essential files from script directory
+        if [[ -f "$SCRIPT_DIR/database-init.sql" ]]; then
+            cp "$SCRIPT_DIR/database-init.sql" "$APP_DIR/backend/"
+        fi
     fi
     
     # Set ownership
