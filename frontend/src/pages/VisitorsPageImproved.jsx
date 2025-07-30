@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { visitorsAPI } from '../utils/api.js';
+import { visitorsAPI, feedbackAPI } from '../utils/api.js';
 import { useVisitorContext } from '../contexts/VisitorContext.jsx';
 import { formatDateTime } from '../utils/index.js';
 import Avatar from '../components/Avatar';
@@ -10,6 +10,7 @@ import { ActionDropdown, DropdownItem } from '../components/ActionDropdown';
 import { EditVisitorModal } from '../components/EditVisitorModal';
 import { VisitorEditDeleteModal } from '../components/VisitorEditDeleteModal';
 import { useGlobalAlert } from '../components/SweetAlertProvider.jsx';
+import FeedbackModal from '../components/FeedbackModal.jsx';
 import { 
   Users, 
   Search, 
@@ -47,6 +48,10 @@ export function VisitorsPageImproved() {
   const [message, setMessage] = useState('');
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const [showVisitorManageModal, setShowVisitorManageModal] = useState(false);
+  
+  // Feedback modal states
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackVisitor, setFeedbackVisitor] = useState(null);
 
   useEffect(() => {
     fetchVisitors();
@@ -94,6 +99,10 @@ export function VisitorsPageImproved() {
             icon: 'success'
           });
           fetchVisitors();
+          
+          // Show feedback modal
+          setFeedbackVisitor(visitor);
+          setShowFeedbackModal(true);
         }
       } catch (error) {
         await alert({
@@ -102,6 +111,32 @@ export function VisitorsPageImproved() {
           icon: 'error'
         });
       }
+    }
+  };
+
+  // Feedback handlers
+  const handleFeedbackClose = () => {
+    setShowFeedbackModal(false);
+    setFeedbackVisitor(null);
+  };
+
+  const handleFeedbackSubmit = async (feedbackData) => {
+    try {
+      const response = await feedbackAPI.create({
+        visitor_id: feedbackVisitor.id,
+        visitor_name: feedbackVisitor.full_name || feedbackVisitor.name,
+        ...feedbackData
+      });
+
+      if (response && response.success) {
+        alert.success('Thank you for your feedback!');
+        handleFeedbackClose();
+      } else {
+        throw new Error(response?.message || 'Failed to submit feedback');
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert.error('Failed to submit feedback. Please try again.');
     }
   };
 
@@ -424,6 +459,17 @@ export function VisitorsPageImproved() {
             setShowVisitorManageModal(false);
             setSelectedVisitor(null);
           }}
+        />
+      )}
+      
+      {/* Feedback Modal */}
+      {showFeedbackModal && feedbackVisitor && (
+        <FeedbackModal
+          isOpen={showFeedbackModal}
+          visitorId={feedbackVisitor.id}
+          visitorName={feedbackVisitor.full_name || feedbackVisitor.name}
+          onClose={handleFeedbackClose}
+          onSubmit={handleFeedbackSubmit}
         />
       )}
     </div>

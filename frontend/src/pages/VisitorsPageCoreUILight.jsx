@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { visitorsAPI } from '../utils/api.js';
+import { visitorsAPI, feedbackAPI } from '../utils/api.js';
 import { visitorManagementAPI } from '../utils/visitorManagementAPI.js';
 import { useVisitorContext } from '../contexts/VisitorContext.jsx';
 import { formatDateTime } from '../utils/index.js';
@@ -9,6 +9,7 @@ import { getPhotoUrl } from '../utils/imageUtils.js';
 import { ActionDropdown, DropdownItem } from '../components/ActionDropdown';
 import { useGlobalAlert } from '../components/SweetAlertProvider.jsx';
 import { useAuth } from '../context/AuthContext';
+import FeedbackModal from '../components/FeedbackModal.jsx';
 import { 
   Users, 
   Search, 
@@ -49,6 +50,10 @@ export function VisitorsPageCoreUILight() {
   // Modal states for manage visitor
   const [showVisitorManageModal, setShowVisitorManageModal] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
+  
+  // Feedback modal states
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackVisitor, setFeedbackVisitor] = useState(null);
   
   // Track visitors with pending deletion requests
   const [visitorDeletionStatus, setVisitorDeletionStatus] = useState({});
@@ -245,7 +250,20 @@ export function VisitorsPageCoreUILight() {
       if (response.data.success) {
         fetchVisitors(); // Refresh the list
         setMessage('Visitor checked out successfully!');
-        setTimeout(() => setMessage(''), 3000);
+        
+        // Find the visitor data for feedback modal
+        const visitor = visitors.find(v => v.id === visitorId);
+        if (visitor) {
+          setFeedbackVisitor(visitor);
+          
+          // Show feedback modal after a short delay
+          setTimeout(() => {
+            setMessage('');
+            setShowFeedbackModal(true);
+          }, 1500);
+        } else {
+          setTimeout(() => setMessage(''), 3000);
+        }
       }
     } catch (error) {
       console.error('Error checking out visitor:', error);
@@ -258,6 +276,32 @@ export function VisitorsPageCoreUILight() {
     setSelectedVisitor(visitor);
     setShowVisitorManageModal(true);
     setOpenDropdown(null);
+  };
+
+  // Feedback handlers
+  const handleFeedbackClose = () => {
+    setShowFeedbackModal(false);
+    setFeedbackVisitor(null);
+  };
+
+  const handleFeedbackSubmit = async (feedbackData) => {
+    try {
+      const response = await feedbackAPI.create({
+        visitor_id: feedbackVisitor.id,
+        visitor_name: feedbackVisitor.full_name || feedbackVisitor.name,
+        ...feedbackData
+      });
+
+      if (response && response.success) {
+        alert.success('Thank you for your feedback!');
+        handleFeedbackClose();
+      } else {
+        throw new Error(response?.message || 'Failed to submit feedback');
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert.error('Failed to submit feedback. Please try again.');
+    }
   };
 
   const handleManageSuccess = () => {
@@ -1387,6 +1431,17 @@ export function VisitorsPageCoreUILight() {
           )}
         </div>
       </div>
+      
+      {/* Feedback Modal */}
+      {showFeedbackModal && feedbackVisitor && (
+        <FeedbackModal
+          isOpen={showFeedbackModal}
+          visitorId={feedbackVisitor.id}
+          visitorName={feedbackVisitor.full_name || feedbackVisitor.name}
+          onClose={handleFeedbackClose}
+          onSubmit={handleFeedbackSubmit}
+        />
+      )}
     </div>
   );
 }
