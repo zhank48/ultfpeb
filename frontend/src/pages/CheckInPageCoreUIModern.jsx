@@ -768,8 +768,9 @@ export function CheckInPageCoreUIModern() {
           customInputs.documentType : formData.documentType,
         document_name: formData.documentName,
         document_number: formData.documentNumber,
-        photo: capturedImage || null,
-        signature: signatureData || null
+        // Only include photo and signature if they have valid data
+        ...(capturedImage && capturedImage.length > 10 ? { photo: capturedImage } : {}),
+        ...(signatureData && signatureData.length > 10 ? { signature: signatureData } : {})
       };
 
       // Remove the camelCase fields to avoid confusion

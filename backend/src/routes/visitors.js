@@ -278,8 +278,8 @@ router.post('/check-in', authenticateToken, [
   body('institution').isLength({ min: 2 }).trim().withMessage('Institution must be at least 2 characters'),
   body('purpose').isLength({ min: 2 }).trim().withMessage('Purpose must be at least 2 characters'),
   body('unit').isLength({ min: 2 }).trim().withMessage('Unit must be at least 2 characters'),
-  body('photo').optional().isLength({ min: 10 }).withMessage('Photo data invalid'),
-  body('signature').optional().isLength({ min: 10 }).withMessage('Signature data invalid')
+  body('photo').optional({ nullable: true, checkFalsy: true }),
+  body('signature').optional({ nullable: true, checkFalsy: true })
 ], async (req, res) => {
   try {
     console.log('Check-in request received');
