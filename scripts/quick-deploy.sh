@@ -43,68 +43,54 @@ if [[ $EUID -ne 0 ]]; then
     error "This script must be run as root (use sudo)"
 fi
 
-# Create temporary directory
-mkdir -p "$TEMP_DIR"
-cd "$TEMP_DIR"
+# Get script directory (where quick-deploy.sh is located)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 log "Starting ULT FPEB Quick Deployment"
 log "Target IP: $LOCAL_IP"
-log "Temporary directory: $TEMP_DIR"
+log "Script directory: $SCRIPT_DIR"
 
-# Download deployment scripts (if running from curl/wget)
-if [[ ! -f "deploy-linux-server.sh" ]]; then
-    log "Downloading deployment scripts..."
-    
-    # For GitHub repository (adjust URL as needed)
-    # curl -sSL https://raw.githubusercontent.com/your-repo/ult-fpeb/main/scripts/deploy-linux-server.sh -o deploy-linux-server.sh
-    # curl -sSL https://raw.githubusercontent.com/your-repo/ult-fpeb/main/scripts/database-init.sql -o database-init.sql
-    # curl -sSL https://raw.githubusercontent.com/your-repo/ult-fpeb/main/scripts/configure-environment.sh -o configure-environment.sh
-    # curl -sSL https://raw.githubusercontent.com/your-repo/ult-fpeb/main/scripts/service-manager.sh -o service-manager.sh
-    
-    # For now, create inline versions or copy from current directory
-    if [[ -f "/root/deploy-linux-server.sh" ]]; then
-        cp /root/deploy-linux-server.sh .
-        cp /root/database-init.sql . 2>/dev/null || true
-        cp /root/configure-environment.sh . 2>/dev/null || true
-        cp /root/service-manager.sh . 2>/dev/null || true
+# Check if scripts exist in the same directory
+REQUIRED_SCRIPTS=(
+    "deploy-linux-server.sh"
+    "database-init.sql"
+    "configure-environment.sh" 
+    "service-manager.sh"
+)
+
+log "Checking for required deployment scripts..."
+for script in "${REQUIRED_SCRIPTS[@]}"; do
+    if [[ -f "$SCRIPT_DIR/$script" ]]; then
+        log "✓ Found: $script"
     else
-        error "Deployment scripts not found. Please ensure they are available."
+        error "Missing required script: $script"
     fi
-fi
+done
+
+# Use scripts from the same directory
+cd "$SCRIPT_DIR"
 
 # Make scripts executable
 chmod +x *.sh
 
 # Run main deployment
 log "Running main deployment script..."
-if [[ -f "deploy-linux-server.sh" ]]; then
-    ./deploy-linux-server.sh "$LOCAL_IP" | tee -a "$LOG_FILE"
-else
-    error "Main deployment script not found"
-fi
+./deploy-linux-server.sh "$LOCAL_IP" | tee -a "$LOG_FILE"
 
 # Configure environment
 log "Configuring production environment..."
-if [[ -f "configure-environment.sh" ]]; then
-    ./configure-environment.sh production "$LOCAL_IP" | tee -a "$LOG_FILE"
-fi
+./configure-environment.sh production "$LOCAL_IP" | tee -a "$LOG_FILE"
 
 # Final service check
 log "Performing post-deployment checks..."
-if [[ -f "service-manager.sh" ]]; then
-    cp service-manager.sh /usr/local/bin/ult-service
-    chmod +x /usr/local/bin/ult-service
-    
-    # Wait for services to start
-    sleep 10
-    
-    # Health check
-    /usr/local/bin/ult-service health production | tee -a "$LOG_FILE"
-fi
+cp service-manager.sh /usr/local/bin/ult-service
+chmod +x /usr/local/bin/ult-service
 
-# Clean up
-cd /
-rm -rf "$TEMP_DIR"
+# Wait for services to start
+sleep 10
+
+# Health check
+/usr/local/bin/ult-service health production | tee -a "$LOG_FILE"
 
 log "=== QUICK DEPLOYMENT COMPLETED ==="
 info "Application URL: https://$LOCAL_IP"
