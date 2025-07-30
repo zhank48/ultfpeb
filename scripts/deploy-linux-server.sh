@@ -116,7 +116,7 @@ install_mysql() {
     export DEBIAN_FRONTEND=noninteractive
     
     # Generate random root password
-    MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32)
+    MYSQL_ROOT_PASSWORD="ult@fpeb24"
     DB_PASSWORD=$(openssl rand -base64 24)
     
     # Pre-configure MySQL

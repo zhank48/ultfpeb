@@ -44,7 +44,12 @@
     "seed:admin": "node scripts/seed-admin.js",
     "migrate:prod": "node migrate-visitor-management.js --database=ult_fpeb_db",
     "migrate:help": "node migrate-visitor-management.js --help",
-    "migrate:debug": "node migrate-simple.js"
+    "migrate:debug": "node migrate-simple.js",
+    "deploy:env:dev": "bash scripts/manage-environment.sh development",
+    "deploy:env:prod": "bash scripts/manage-environment.sh production",
+    "deploy:env:laragon": "bash scripts/manage-environment.sh laragon",
+    "deploy:fresh": "bash scripts/deploy-with-git.sh",
+    "deploy:update": "bash scripts/deploy-with-git.sh update"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
@@ -66,7 +71,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/ult-fpeb-visitor-management.git"
+    "url": "https://github.com/zhank48/ultfpeb.git"
   },
   "deploymentId": "deploy-1751421070727",
   "lastDeployment": "2025-07-02T01:51:10.731Z",

@@ -116,7 +116,7 @@ export class Visitor {
     try {
       const {
         full_name, phone_number, email, institution, purpose, person_to_meet,
-        location, photo_url, signature_url, check_in_time, input_by_user_id,
+        photo_url, signature_url, check_in_time, input_by_user_id,
         id_number, id_type, address, request_document, document_type, document_name, document_number
       } = visitorData;
 
@@ -125,11 +125,11 @@ export class Visitor {
 
       const [result] = await db.execute(
         `INSERT INTO visitors 
-         (full_name, phone_number, email, institution, purpose, person_to_meet, location, 
+         (full_name, phone_number, email, institution, purpose, person_to_meet, 
           photo_url, signature_url, check_in_time, input_by_user_id, id_number, id_type, address,
           request_document, document_type, document_name, document_number) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [full_name, phone_number, email || '', institution, purpose, person_to_meet || '', location,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [full_name, phone_number, email || '', institution, purpose, person_to_meet || '',
          photo_url || '', signature_url || '', formattedCheckInTime, input_by_user_id, 
          id_number || '', id_type || '', address || '', 
          request_document || false, document_type || null, document_name || null, document_number || null]

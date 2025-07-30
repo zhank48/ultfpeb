@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS visitors (
   id INT PRIMARY KEY AUTO_INCREMENT,
   full_name VARCHAR(255) NOT NULL,
-  phone VARCHAR(50) NOT NULL,
+  phone_number VARCHAR(50) NOT NULL,
   email VARCHAR(255),
   institution VARCHAR(255) NOT NULL,
   id_type VARCHAR(50),
@@ -32,12 +32,24 @@ CREATE TABLE IF NOT EXISTS visitors (
   purpose TEXT NOT NULL,
   unit VARCHAR(255) NOT NULL,
   person_to_meet VARCHAR(255) NOT NULL,
+  location VARCHAR(500) GENERATED ALWAYS AS (
+    CASE 
+      WHEN person_to_meet LIKE '%Dekan%' THEN 'Dekan FPEB'
+      WHEN person_to_meet LIKE '%Wakil Dekan%' OR person_to_meet LIKE '%WD%' THEN 'Wakil Dekan FPEB'
+      WHEN person_to_meet LIKE '%Staff ULT%' THEN 'Unit Layanan Terpadu (ULT) FPEB'
+      WHEN person_to_meet LIKE '%Staff Akademik%' THEN 'Bagian Akademik FPEB'
+      WHEN person_to_meet LIKE '%Staff Keuangan%' THEN 'Bagian Keuangan FPEB'
+      ELSE CONCAT(unit, ' - ', person_to_meet)
+    END
+  ) STORED,
   request_document BOOLEAN DEFAULT FALSE,
   document_type VARCHAR(255),
   document_name VARCHAR(255),
   document_number VARCHAR(100),
   photo LONGTEXT,
   signature LONGTEXT,
+  photo_url VARCHAR(500),
+  signature_url VARCHAR(500),
   check_in_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   check_out_time TIMESTAMP NULL,
   status ENUM('checked_in', 'checked_out') DEFAULT 'checked_in',
