@@ -3,7 +3,7 @@ module.exports = {
     {
       "name": "ult-fpeb-backend",
       "script": "./backend/server.js",
-      "cwd": "/var/www/ult-fpeb-visitor-management",
+      "cwd": "/opt/ult-fpeb",
       "instances": 1,
       "autorestart": true,
       "watch": false,
