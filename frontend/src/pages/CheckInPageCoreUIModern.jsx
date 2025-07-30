@@ -727,13 +727,7 @@ export function CheckInPageCoreUIModern() {
       newErrors.personToMeet = 'Silakan isi nama orang yang akan ditemui';
     }
 
-    if (!capturedImage) {
-      newErrors.photo = 'Foto wajib diambil';
-    }
 
-    if (!signatureData) {
-      newErrors.signature = 'Tanda tangan wajib diisi';
-    }
     
     // Validate ID number if provided
     if (formData.idNumber.trim() && !validateIdNumber(formData.idNumber, formData.idType)) {
@@ -1501,7 +1495,7 @@ export function CheckInPageCoreUIModern() {
                 <div style={styles.sectionHeader}>
                   <h4 style={{...styles.sectionTitle, fontSize: '16px'}}>
                     <Camera size={16} />
-                    Foto Pengunjung <span style={styles.required}>*</span>
+                    Foto Pengunjung
                   </h4>
                 </div>
                 <div style={styles.sectionBody}>
@@ -1549,7 +1543,7 @@ export function CheckInPageCoreUIModern() {
                 <div style={styles.sectionHeader}>
                   <h4 style={{...styles.sectionTitle, fontSize: '16px'}}>
                     <FileText size={16} />
-                    Tanda Tangan Digital <span style={styles.required}>*</span>
+                    Tanda Tangan Digital
                   </h4>
                 </div>
                 <div style={styles.sectionBody}>
