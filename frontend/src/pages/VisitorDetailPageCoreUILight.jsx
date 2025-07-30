@@ -456,6 +456,7 @@ export function VisitorDetailPageCoreUILight() {
       }
 
       const response = await visitorsAPI.checkOut(id, checkoutData);
+      
       if (response && response.data && response.data.success) {
         // Update local state with the complete visitor data from backend
         setVisitor(response.data.data.visitor);
@@ -862,14 +863,13 @@ export function VisitorDetailPageCoreUILight() {
   const handleFeedbackSubmit = async (feedbackData) => {
     try {
       if (!visitor || !visitor.id) {
-        console.error('❌ Visitor data not available for feedback submission');
         setError('Visitor data not available. Please refresh the page.');
         return;
       }
 
       const response = await feedbackAPI.create({
         visitor_id: visitor.id,
-        visitor_name: visitor.name,
+        visitor_name: visitor.full_name || visitor.name,
         ...feedbackData
       });
 
@@ -896,12 +896,10 @@ export function VisitorDetailPageCoreUILight() {
           }, 300);
         }, 1000);
       } else {
-        console.error('❌ Feedback API response indicates failure:', response);
         throw new Error(response?.message || 'Failed to submit feedback');
       }
     } catch (error) {
-      console.error('❌ Error submitting feedback:', error);
-      console.error('❌ Error details:', error.response?.data || error.message);
+      console.error('Error submitting feedback:', error);
       setError('Failed to submit feedback. Please try again.');
 
       // Mark modal as closing
@@ -1957,12 +1955,30 @@ export function VisitorDetailPageCoreUILight() {
       {/* Feedback Modal */}
       {showFeedbackModal && (
         <FeedbackModal
+          isOpen={showFeedbackModal}
           visitorId={visitor.id}
           visitorName={visitor.name}
           onClose={handleFeedbackClose}
           onSubmit={handleFeedbackSubmit}
           isClosing={isModalClosing}
         />
+      )}
+      
+      {/* Debug Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          right: '10px',
+          background: 'rgba(0,0,0,0.8)',
+          color: 'white',
+          padding: '10px',
+          borderRadius: '5px',
+          fontSize: '12px',
+          zIndex: 9999
+        }}>
+          showFeedbackModal: {showFeedbackModal ? 'true' : 'false'}
+        </div>
       )}
 
       {/* Deletion Request Modal */}

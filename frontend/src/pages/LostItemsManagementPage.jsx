@@ -134,7 +134,7 @@ export function LostItemsManagementPage() {
       });
 
       const responseData = await response.json();
-      console.log('📊 Lost item response:', responseData);
+      console.log('📊 Lost item response:', JSON.stringify(responseData, null, 2));
 
       if (response.ok) {
         alert.success('Barang hilang berhasil didaftarkan!');

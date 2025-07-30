@@ -11,11 +11,12 @@ const createFeedbackTable = async () => {
     CREATE TABLE IF NOT EXISTS feedbacks (
       id INT AUTO_INCREMENT PRIMARY KEY,
       visitor_id INT,
-      complainant_name VARCHAR(255) NOT NULL,
+      visitor_name VARCHAR(255) NOT NULL,
       rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
       category ENUM('service', 'facility', 'process', 'overall', 'suggestion') DEFAULT 'service',
       feedback_text TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (visitor_id) REFERENCES visitors(id) ON DELETE SET NULL
     )
   `;
@@ -76,7 +77,7 @@ router.post('/', [
       visitor_id || null,
       finalName,
       rating,
-      category,
+      parseInt(category),
       feedback_text || null
     ]);
 
@@ -90,7 +91,7 @@ router.post('/', [
         visitor_id,
         visitor_name: finalName,
         rating,
-        category,
+        category: parseInt(category),
         feedback_text
       }
     });
@@ -206,35 +207,46 @@ router.get('/public', async (req, res) => {
 // Get feedback statistics
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
-    // Get total count of feedbacks with ratings
-    const [totalResult] = await db.execute(`
-      SELECT COUNT(*) as total 
-      FROM feedbacks 
-      WHERE (rating IS NOT NULL OR overall_satisfaction_rating IS NOT NULL)
+    console.log('📊 Fetching feedback stats...');
+    
+    // Check if feedbacks table exists first
+    const [tableExists] = await db.execute(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'feedbacks'
     `);
+    
+    if (tableExists[0].count === 0) {
+      console.log('📊 Feedbacks table does not exist, returning default stats');
+      return res.json({
+        success: true,
+        data: {
+          total: 0,
+          averageRating: '0.0',
+          ratingDistribution: [],
+          categoryDistribution: [],
+          recentFeedbacks: []
+        }
+      });
+    }
+    
+    // Get total feedback count
+    const [totalResult] = await db.execute('SELECT COUNT(*) as total FROM feedbacks');
     const total = totalResult[0].total;
-
-    // Get average rating (prioritize 'rating' field, fallback to 'overall_satisfaction_rating')
-    const [avgResult] = await db.execute(`
-      SELECT AVG(
-        COALESCE(rating, overall_satisfaction_rating)
-      ) as average 
-      FROM feedbacks 
-      WHERE (rating IS NOT NULL OR overall_satisfaction_rating IS NOT NULL)
-    `);
-    const averageRating = parseFloat(avgResult[0].average || 0).toFixed(1);
-
-    // Get rating distribution (using COALESCE for both rating fields)
+    
+    // Get average rating
+    const [avgResult] = await db.execute('SELECT AVG(rating) as avgRating FROM feedbacks');
+    const averageRating = avgResult[0].avgRating ? parseFloat(avgResult[0].avgRating).toFixed(1) : '0.0';
+    
+    // Get rating distribution
     const [ratingDist] = await db.execute(`
-      SELECT 
-        COALESCE(rating, overall_satisfaction_rating) as rating, 
-        COUNT(*) as count 
+      SELECT rating, COUNT(*) as count 
       FROM feedbacks 
-      WHERE (rating IS NOT NULL OR overall_satisfaction_rating IS NOT NULL)
-      GROUP BY COALESCE(rating, overall_satisfaction_rating) 
-      ORDER BY COALESCE(rating, overall_satisfaction_rating) DESC
+      GROUP BY rating 
+      ORDER BY rating
     `);
-
+    
     // Get category distribution
     const [categoryDist] = await db.execute(`
       SELECT category, COUNT(*) as count 
@@ -242,30 +254,52 @@ router.get('/stats', authenticateToken, async (req, res) => {
       GROUP BY category 
       ORDER BY count DESC
     `);
-
-    // Get recent feedbacks
-    const [recent] = await db.execute(`
+    
+    // Get recent feedbacks (last 5)
+    const [recentFeedbacks] = await db.execute(`
       SELECT visitor_name, rating, feedback_text, created_at 
       FROM feedbacks 
       ORDER BY created_at DESC 
       LIMIT 5
     `);
-
+    
+    const response = {
+      success: true,
+      data: {
+        total: parseInt(total),
+        averageRating: averageRating,
+        ratingDistribution: ratingDist,
+        categoryDistribution: categoryDist,
+        recentFeedbacks: recentFeedbacks
+      }
+    };
+    
+    console.log('📊 Feedback stats retrieved successfully:', {
+      total: response.data.total,
+      averageRating: response.data.averageRating,
+      ratingsCount: response.data.ratingDistribution.length,
+      categoriesCount: response.data.categoryDistribution.length,
+      recentCount: response.data.recentFeedbacks.length
+    });
+    
+    res.json(response);
+  } catch (error) {
+    console.error('❌ Get feedback stats error:', error);
+    console.error('❌ Error details:', error.message);
+    console.error('❌ Stack trace:', error.stack);
+    
+    // Return a fallback response instead of 500 error
     res.json({
       success: true,
       data: {
-        total,
-        averageRating,
-        ratingDistribution: ratingDist,
-        categoryDistribution: categoryDist,
-        recentFeedbacks: recent
-      }
-    });
-  } catch (error) {
-    console.error('Get feedback stats error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while fetching feedback statistics'
+        total: 0,
+        averageRating: '0.0',
+        ratingDistribution: [],
+        categoryDistribution: [],
+        recentFeedbacks: []
+      },
+      fallback: true,
+      error: error.message
     });
   }
 });

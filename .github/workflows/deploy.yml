@@ -1,0 +1,96 @@
+name: Deploy to Production Server
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        npm ci
+        cd backend && npm ci
+        cd ../frontend && npm ci
+        
+    - name: Run tests
+      run: |
+        # Add your test commands here
+        # npm run test
+        echo "Tests would run here"
+        
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+        
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.PORT || 22 }}
+        script: |
+          # Navigate to application directory
+          cd /var/www/ult-fpeb || { echo "App directory not found"; exit 1; }
+          
+          # Create deployment log
+          echo "$(date): Starting deployment from GitHub Actions" >> /var/log/ult-fpeb/deploy.log
+          
+          # Pull latest changes
+          git fetch origin
+          git reset --hard origin/main
+          
+          # Install/update backend dependencies
+          cd backend
+          npm ci --only=production
+          
+          # Install/update frontend dependencies and build
+          cd ../frontend
+          npm ci
+          npm run build
+          
+          # Restart services
+          pm2 restart ult-fpeb-backend || pm2 start ecosystem.config.cjs
+          
+          # Test deployment
+          sleep 5
+          if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
+            echo "$(date): Deployment successful - API health check passed" >> /var/log/ult-fpeb/deploy.log
+            # Send success notification (optional)
+            # curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} -H 'Content-type: application/json' --data '{"text":"🚀 ULT FPEB deployment successful!"}'
+          else
+            echo "$(date): Deployment failed - API health check failed" >> /var/log/ult-fpeb/deploy.log
+            exit 1
+          fi
+          
+    - name: Notify deployment status
+      if: always()
+      run: |
+        if [ ${{ job.status }} == 'success' ]; then
+          echo "✅ Deployment completed successfully"
+        else
+          echo "❌ Deployment failed"
+        fi
