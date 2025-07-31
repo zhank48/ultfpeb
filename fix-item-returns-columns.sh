@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS item_returns (
     return_date DATE NOT NULL,
     return_time TIME,
     returned_by VARCHAR(255),
+    returned_by_user_id INT UNSIGNED,
     return_operator VARCHAR(255),
     return_operator_id INT UNSIGNED,
     return_photo_url VARCHAR(500),
@@ -54,7 +55,8 @@ CREATE TABLE IF NOT EXISTS item_returns (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (lost_item_id) REFERENCES lost_items(id) ON DELETE CASCADE,
-    FOREIGN KEY (return_operator_id) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (return_operator_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (returned_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 EOF
     print_success "item_returns table created"
@@ -102,6 +104,7 @@ COLUMNS_TO_ADD=(
     "item_returns:proof_of_ownership:TEXT"
     "item_returns:return_time:TIME"
     "item_returns:returned_by:VARCHAR(255)"
+    "item_returns:returned_by_user_id:INT UNSIGNED"
     "item_returns:return_operator:VARCHAR(255)"
     "item_returns:return_operator_id:INT UNSIGNED"
     "item_returns:return_photo_url:VARCHAR(500)"
