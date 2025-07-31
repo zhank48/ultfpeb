@@ -361,7 +361,6 @@ router.post('/check-in', authenticateToken, [
       institution,
       purpose,
       person_to_meet: person_to_meet || '',
-      location: unit,
       photo_url: photoUrl,
       signature_url: signatureUrl,
       check_in_time: check_in_time || new Date().toISOString(),

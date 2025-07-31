@@ -115,7 +115,7 @@ export class Visitor {
   static async create(visitorData) {
     try {
       const {
-        full_name, phone_number, email, institution, purpose, person_to_meet, location,
+        full_name, phone_number, email, institution, purpose, person_to_meet,
         photo_url, signature_url, check_in_time, input_by_user_id,
         id_number, id_type, address, request_document, document_type, document_name, document_number
       } = visitorData;
@@ -125,12 +125,11 @@ export class Visitor {
 
       const [result] = await db.execute(
         `INSERT INTO visitors 
-         (full_name, phone_number, email, institution, purpose, person_to_meet, location,
+         (full_name, phone_number, email, institution, purpose, person_to_meet,
           photo_url, signature_url, check_in_time, input_by_user_id, id_number, id_type, address,
           request_document, document_type, document_name, document_number) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [full_name, phone_number, email || '', institution, purpose, person_to_meet || '', 
-         location || `${institution} - ${person_to_meet || ''}`.trim(),
          photo_url || '', signature_url || '', formattedCheckInTime, input_by_user_id, 
          id_number || '', id_type || '', address || '', 
          request_document || false, document_type || null, document_name || null, document_number || null]
@@ -147,16 +146,16 @@ export class Visitor {
     try {
       const {
         full_name, phone_number, institution, purpose, person_to_meet,
-        location, photo_url, signature_url, id_number, id_type, address, email
+        photo_url, signature_url, id_number, id_type, address, email
       } = visitorData;
 
       await db.execute(
         `UPDATE visitors 
          SET full_name = ?, phone_number = ?, email = ?, institution = ?, purpose = ?, 
-             person_to_meet = ?, location = ?, photo_url = ?, signature_url = ?,
+             person_to_meet = ?, photo_url = ?, signature_url = ?,
              id_number = ?, id_type = ?, address = ?
          WHERE id = ?`,
-        [full_name, phone_number, email || '', institution, purpose, person_to_meet, location,
+        [full_name, phone_number, email || '', institution, purpose, person_to_meet,
          photo_url, signature_url, id_number || '', id_type || '', address || '', id]
       );
 

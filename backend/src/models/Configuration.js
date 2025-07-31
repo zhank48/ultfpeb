@@ -256,17 +256,49 @@ export class Configuration {
 
   /**
    * Create configuration option
+   * Supports both formats:
+   * 1. createOption(optionData) - with category_id in optionData
+   * 2. createOption(categoryName, optionData) - with category name as first parameter
    */
-  static async createOption(optionData) {
+  static async createOption(categoryOrData, optionData = null) {
     try {
+      let category_id;
+      let data;
+
+      // Handle both calling formats
+      if (typeof categoryOrData === 'string' && optionData) {
+        // Format: createOption(categoryName, optionData)
+        const categoryName = categoryOrData;
+        data = optionData;
+        
+        // Get category_id from category name
+        const [categoryRows] = await db.execute(
+          'SELECT id FROM configuration_categories WHERE key_name = ? AND is_active = true',
+          [categoryName]
+        );
+        
+        if (!categoryRows[0]) {
+          throw new Error(`Category '${categoryName}' not found`);
+        }
+        
+        category_id = categoryRows[0].id;
+      } else {
+        // Format: createOption(optionData)
+        data = categoryOrData;
+        category_id = data.category_id;
+      }
+
       const {
-        category_id,
-        option_value,
-        display_text,
+        option_value = data.value,
+        display_text = data.name,
         group_id = null,
         sort_order = 0,
         metadata = null
-      } = optionData;
+      } = data;
+
+      if (!category_id) {
+        throw new Error('Category ID is required');
+      }
 
       const [result] = await db.execute(
         `INSERT INTO configuration_options 
@@ -277,7 +309,11 @@ export class Configuration {
 
       return {
         id: result.insertId,
-        ...optionData,
+        category_id,
+        option_value,
+        display_text,
+        group_id,
+        sort_order,
         is_active: true
       };
     } catch (error) {
@@ -291,7 +327,14 @@ export class Configuration {
    */
   static async updateOption(id, optionData) {
     try {
-      const { option_value, display_text, group_id, sort_order, metadata, is_active } = optionData;
+      const { 
+        option_value = optionData.value, 
+        display_text = optionData.name, 
+        group_id, 
+        sort_order, 
+        metadata, 
+        is_active 
+      } = optionData;
 
       const setClause = [];
       const params = [];
