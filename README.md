@@ -2,6 +2,8 @@
 
 Sistema manajemen pengunjung modern untuk Unit Layanan Terpadu Fakultas Pendidikan Ekonomi dan Bisnis UPI.
 
+> **Status Deployment**: GitHub Actions workflow telah dinonaktifkan untuk deployment manual dan kontrol yang lebih baik.
+
 ## 🚀 Quick Start
 
 ### Option 1: One-Click Setup (Recommended)
@@ -200,6 +202,20 @@ docker-compose up -d
 docker-compose -f configs/docker-compose.prod.yml up -d
 ```
 
+## 🚀 Deployment Status
+
+**GitHub Actions**: Dinonaktifkan untuk kontrol deployment manual yang lebih baik.
+
+### Manual Deployment
+Untuk deployment manual, gunakan script yang tersedia:
+```bash
+# Production deployment
+npm run deploy:production
+
+# Or using batch script
+scripts/deploy-production.bat
+```
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -207,6 +223,8 @@ docker-compose -f configs/docker-compose.prod.yml up -d
 3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to branch (`git push origin feature/AmazingFeature`) 
 5. Open a Pull Request
+
+**Note**: Automatic deployment via GitHub Actions telah dinonaktifkan. Deployment dilakukan secara manual untuk kontrol yang lebih baik.
 
 ## 📄 License
 
