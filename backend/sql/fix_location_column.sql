@@ -1,5 +1,8 @@
 -- Fix location column issue - convert from generated column to regular column
 -- This fixes the "The value specified for generated column 'location' is not allowed" error
+-- Database: ult_fpeb_prod
+
+USE ult_fpeb_prod;
 
 -- Check current location column definition
 -- DESCRIBE visitors;

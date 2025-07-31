@@ -214,6 +214,10 @@ npm run deploy:production
 
 # Or using batch script
 scripts/deploy-production.bat
+
+# Database setup (use production database: ult_fpeb_prod)
+mysql -u root -p ult_fpeb_prod < backend/sql/fix_location_column.sql
+mysql -u root -p ult_fpeb_prod < backend/sql/create_configuration_tables.sql
 ```
 
 ## 🤝 Contributing

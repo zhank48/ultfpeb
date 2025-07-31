@@ -1,5 +1,8 @@
 -- Create configuration tables if they don't exist
 -- This fixes the configuration endpoint errors
+-- Database: ult_fpeb_prod
+
+USE ult_fpeb_prod;
 
 -- Create configuration_categories table
 CREATE TABLE IF NOT EXISTS configuration_categories (
