@@ -66,9 +66,28 @@ router.post('/login', [
 
   } catch (error) {
     console.error('Login error:', error);
+    
+    // Handle specific database errors
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(502).json({
+        success: false,
+        message: 'Database connection failed',
+        code: 'DB_CONNECTION_FAILED'
+      });
+    }
+    
+    if (error.code === 'ER_NO_SUCH_TABLE') {
+      return res.status(502).json({
+        success: false,
+        message: 'Users table not found',
+        code: 'USERS_TABLE_MISSING'
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Server error during login'
+      message: 'Server error during login',
+      code: 'LOGIN_SERVER_ERROR'
     });
   }
 });

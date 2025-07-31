@@ -24,6 +24,7 @@ import lostItemsRoutes from './src/routes/lost-items.js';
 import visitorManagementRoutes from './src/routes/visitorManagement.js';
 import visitorActionsRoutes from './src/routes/visitorActions.js';
 import deletionRequestsRoutes from './src/routes/deletionRequests.js';
+import healthRoutes from './src/routes/health.js';
 
 // Import database connection
 import { testConnection } from './src/config/database.js';
@@ -181,8 +182,11 @@ app.use('/api/visitor-management', visitorManagementRoutes);
 app.use('/api/visitor-actions', visitorActionsRoutes);
 app.use('/api/deletion-requests', deletionRequestsRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// Health check routes (no rate limiting)
+app.use('/api', healthRoutes);
+
+// Basic health check (legacy endpoint)
+app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'ULT FPEB Backend is running',
