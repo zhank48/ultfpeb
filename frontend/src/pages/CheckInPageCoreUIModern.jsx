@@ -750,6 +750,8 @@ export function CheckInPageCoreUIModern() {
       // Prepare JSON data with custom inputs properly handled
       const submitData = {
         ...formData,
+        // Clean email field - send null instead of empty string
+        email: formData.email && formData.email.trim() ? formData.email.trim() : null,
         // Handle identity fields - map to backend field names
         id_type: formData.idType,
         id_number: formData.idNumber,

@@ -314,7 +314,7 @@ router.post('/check-in', optionalAuth, [
   body('unit').optional().trim(),
   body('photo').optional({ nullable: true, checkFalsy: true }),
   body('signature').optional({ nullable: true, checkFalsy: true }),
-  body('email').optional().isEmail().withMessage('Email must be valid if provided'),
+  body('email').optional({ nullable: true, checkFalsy: true }).isEmail().withMessage('Email must be valid if provided'),
   body('person_to_meet').optional().trim(),
   body('id_type').optional().trim(),
   body('id_number').optional().trim(),

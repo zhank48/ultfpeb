@@ -5,6 +5,8 @@ export class Visitor {
     try {
       let query = `
         SELECT v.*, 
+               v.unit as unit,
+               v.unit as unit_name,
                u.name as input_by_name, 
                u.role as input_by_role,
                u.avatar_url as input_by_avatar,
@@ -64,6 +66,8 @@ export class Visitor {
     try {
       const [rows] = await db.execute(
         `SELECT v.*, 
+                v.unit as unit,
+                v.unit as unit_name,
                 u.name as input_by_name, 
                 u.role as input_by_role, 
                 u.avatar_url as input_by_avatar,
@@ -146,17 +150,17 @@ export class Visitor {
     try {
       const {
         full_name, phone_number, institution, purpose, person_to_meet,
-        photo_url, signature_url, id_number, id_type, address, email
+        photo_url, signature_url, id_number, id_type, address, email, unit
       } = visitorData;
 
       await db.execute(
         `UPDATE visitors 
          SET full_name = ?, phone_number = ?, email = ?, institution = ?, purpose = ?, 
              person_to_meet = ?, photo_url = ?, signature_url = ?,
-             id_number = ?, id_type = ?, address = ?
+             id_number = ?, id_type = ?, address = ?, unit = ?
          WHERE id = ?`,
         [full_name, phone_number, email || '', institution, purpose, person_to_meet,
-         photo_url, signature_url, id_number || '', id_type || '', address || '', id]
+         photo_url, signature_url, id_number || '', id_type || '', address || '', unit || '', id]
       );
 
       return this.findById(id);
