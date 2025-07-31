@@ -311,7 +311,7 @@ router.post('/check-in', optionalAuth, [
   body('phone').optional().isLength({ min: 8, max: 20 }).trim().withMessage('Phone must be between 8-20 characters if provided'),
   body('institution').isLength({ min: 2 }).trim().withMessage('Institution must be at least 2 characters'),
   body('purpose').isLength({ min: 2 }).trim().withMessage('Purpose must be at least 2 characters'),
-  body('unit').optional().trim().withMessage('Unit is optional'),
+  body('unit').optional().trim(),
   body('photo').optional({ nullable: true, checkFalsy: true }),
   body('signature').optional({ nullable: true, checkFalsy: true }),
   body('email').optional().isEmail().withMessage('Email must be valid if provided'),
