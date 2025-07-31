@@ -43,15 +43,6 @@ export const LoginLogo = () => {
         />
       </div>
       <div className="text-center">
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <img 
-            src="/logoultfpeb.png" 
-            alt="ULT FPEB Logo" 
-            className="w-8 h-8 object-contain"
-            style={{ maxWidth: '32px', maxHeight: '32px' }}
-          />
-          <h1 className="text-2xl font-bold text-gray-800">ULT FPEB</h1>
-        </div>
         <p className="text-sm text-gray-600">Unit Layanan Terpadu FPEB</p>
       </div>
     </div>
