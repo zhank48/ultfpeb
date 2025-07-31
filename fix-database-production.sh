@@ -43,21 +43,45 @@ print_status "Host: $DB_HOST"
 if command -v mysql &> /dev/null; then
     print_status "Attempting database update with application credentials..."
     
-    # Use simple SQL file first
-    mysql -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST" "$DB_NAME" << 'EOF'
--- Add missing columns (ignore errors if column exists)
-ALTER TABLE lost_items ADD COLUMN description TEXT;
-ALTER TABLE lost_items ADD COLUMN category VARCHAR(100) DEFAULT NULL;
-ALTER TABLE lost_items ADD COLUMN status ENUM('found','returned','disposed') DEFAULT 'found';
-ALTER TABLE lost_items ADD COLUMN notes TEXT;
-ALTER TABLE lost_items ADD COLUMN handover_signature_data TEXT;
-ALTER TABLE lost_items ADD COLUMN received_by_operator VARCHAR(255) DEFAULT NULL;
-ALTER TABLE lost_items ADD COLUMN received_by_operator_id INT UNSIGNED DEFAULT NULL;
+    # Function to add column if not exists
+    add_column_if_not_exists() {
+        local column_name=$1
+        local column_definition=$2
+        
+        echo "  → Checking column: $column_name"
+        
+        # Check if column exists
+        COLUMN_EXISTS=$(mysql -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST" "$DB_NAME" -se "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '$DB_NAME' AND TABLE_NAME = 'lost_items' AND COLUMN_NAME = '$column_name';" 2>/dev/null)
+        
+        if [[ "$COLUMN_EXISTS" == "0" ]]; then
+            print_status "    Adding missing column: $column_name"
+            mysql -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST" "$DB_NAME" -e "ALTER TABLE lost_items ADD COLUMN $column_name $column_definition;" 2>/dev/null
+            if [[ $? -eq 0 ]]; then
+                print_success "    ✅ Added: $column_name"
+            else
+                print_error "    ❌ Failed to add: $column_name"
+                return 1
+            fi
+        else
+            print_status "    ✅ Already exists: $column_name"
+        fi
+        return 0
+    }
 
--- Show final table structure
-SELECT 'Database update completed successfully' as status;
-DESCRIBE lost_items;
-EOF
+    # Add missing columns one by one
+    print_status "Adding missing columns individually..."
+    
+    add_column_if_not_exists "description" "TEXT"
+    add_column_if_not_exists "category" "VARCHAR(100) DEFAULT NULL"
+    add_column_if_not_exists "status" "ENUM('found','returned','disposed') DEFAULT 'found'"
+    add_column_if_not_exists "notes" "TEXT"
+    add_column_if_not_exists "handover_signature_data" "TEXT"
+    add_column_if_not_exists "received_by_operator" "VARCHAR(255) DEFAULT NULL"
+    add_column_if_not_exists "received_by_operator_id" "INT UNSIGNED DEFAULT NULL"
+
+    # Show final table structure
+    print_status "Showing final table structure..."
+    mysql -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST" "$DB_NAME" -e "SELECT 'Database update completed successfully' as status; DESCRIBE lost_items;" 2>/dev/null
 
     if [[ $? -eq 0 ]]; then
         print_success "Database schema updated successfully"
