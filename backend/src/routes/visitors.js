@@ -11,6 +11,27 @@ import db from '../config/database.js';
 
 const router = express.Router();
 
+// Debug endpoint to check request data
+router.post('/check-in-debug', (req, res) => {
+  console.log('=== DEBUG CHECK-IN REQUEST ===');
+  console.log('Headers:', req.headers);
+  console.log('Body keys:', Object.keys(req.body));
+  console.log('Body data:', req.body);
+  console.log('Content-Type:', req.get('Content-Type'));
+  console.log('================================');
+  
+  res.json({
+    success: true,
+    message: 'Debug data received',
+    data: {
+      headers: req.headers,
+      bodyKeys: Object.keys(req.body),
+      body: req.body,
+      contentType: req.get('Content-Type')
+    }
+  });
+});
+
 // Get all visitors without authentication (for development/testing)
 router.get('/public', async (req, res) => {
   try {
@@ -271,15 +292,33 @@ router.get('/:id', authenticateToken, authorizeRole(['Admin', 'Receptionist']), 
   }
 });
 
+// Optional authentication middleware for check-in
+const optionalAuth = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (token) {
+    // If token exists, try to authenticate
+    authenticateToken(req, res, next);
+  } else {
+    // If no token, proceed without auth
+    req.user = null;
+    next();
+  }
+};
+
 // Check-in endpoint with base64 photo and signature
-router.post('/check-in', authenticateToken, [
+router.post('/check-in', optionalAuth, [
   body('name').isLength({ min: 2 }).trim().withMessage('Name must be at least 2 characters'),
-  body('phone').isLength({ min: 8, max: 20 }).trim().withMessage('Phone must be between 8-20 characters'),
+  body('phone').optional().isLength({ min: 8, max: 20 }).trim().withMessage('Phone must be between 8-20 characters if provided'),
   body('institution').isLength({ min: 2 }).trim().withMessage('Institution must be at least 2 characters'),
   body('purpose').isLength({ min: 2 }).trim().withMessage('Purpose must be at least 2 characters'),
-  body('unit').isLength({ min: 2 }).trim().withMessage('Unit must be at least 2 characters'),
+  body('unit').optional().trim().withMessage('Unit is optional'),
   body('photo').optional({ nullable: true, checkFalsy: true }),
-  body('signature').optional({ nullable: true, checkFalsy: true })
+  body('signature').optional({ nullable: true, checkFalsy: true }),
+  body('email').optional().isEmail().withMessage('Email must be valid if provided'),
+  body('person_to_meet').optional().trim(),
+  body('id_type').optional().trim(),
+  body('id_number').optional().trim(),
+  body('address').optional().trim()
 ], async (req, res) => {
   try {
     console.log('Check-in request received');
