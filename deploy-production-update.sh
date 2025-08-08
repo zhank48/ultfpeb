@@ -75,8 +75,27 @@ print_success "Frontend built successfully"
 # Step 4: Back to root directory
 cd ..
 
-# Step 5: Fix upload files accessibility (handle 404 errors)
-print_status "Step 5: Fixing upload files accessibility..."
+# Step 5: Run comprehensive database migration
+print_status "Step 5: Running database migration to sync with production..."
+if [[ -f "run-database-migration.sh" ]]; then
+    chmod +x run-database-migration.sh
+    # Run migration non-interactively with environment variables
+    export DB_HOST=${DB_HOST:-localhost}
+    export DB_USER=${DB_USER:-root} 
+    export DB_NAME=${DB_NAME:-ult_fpeb_db}
+    echo "yes" | ./run-database-migration.sh
+    print_success "Database migration completed"
+else
+    print_warning "Database migration script not found"
+    print_status "Running basic production database fix..."
+    if [[ -f "backend/sql/production_database_fix.sql" ]]; then
+        mysql -u ${DB_USER:-root} -p${DB_PASSWORD} ${DB_NAME:-ult_fpeb_db} < backend/sql/production_database_fix.sql
+        print_success "Basic database fix applied"
+    fi
+fi
+
+# Step 6: Fix upload files accessibility (handle 404 errors)  
+print_status "Step 6: Fixing upload files accessibility..."
 if [[ -f "fix-production-uploads.sh" ]]; then
     chmod +x fix-production-uploads.sh
     sudo ./fix-production-uploads.sh
@@ -93,8 +112,8 @@ else
     print_status "3. Restart Nginx and PM2 services"
 fi
 
-# Step 6: Restart PM2 services  
-print_status "Step 6: Restarting PM2 services..."
+# Step 7: Restart PM2 services  
+print_status "Step 7: Restarting PM2 services..."
 
 if command -v pm2 &> /dev/null; then
     # Find the correct PM2 process
