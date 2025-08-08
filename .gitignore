@@ -176,7 +176,27 @@ mysql_credentials.txt
 *.backup
 checkout-debug.log
 
+# Development scripts and fixes (to prevent accumulation)
+fix-*.sh
+*fix*.sql
+quick-*.sh
+diagnose-*.sh
+test-*.sh
+verify-*.sh
+complete-*.sh
+manual-*.sh
+simple-*.sh
+
+# Obsolete documentation files
+*_FINAL.md
+*_COMPLETE.md
+*_ANALYSIS.md
+DATABASE_FIX_*.md
+ERROR_HANDLING_*.md
+IMPLEMENTATION_*.md
+WORKFLOW_*.md
+
 # Keep important project files
 !README.md
+!API.md
 !CLAUDE.md
-!README-MIGRATION.md

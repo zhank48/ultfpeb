@@ -111,6 +111,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Serve static files (uploaded images) with proper CORS and Content-Type headers
 const uploadsPath = path.join(__dirname, 'uploads');
 console.log(`📁 Serving static files from: ${uploadsPath}`);
+
+// Single unified static middleware for all upload files
 app.use('/uploads', express.static(uploadsPath, {
   setHeaders: (res, filePath, stat) => {
     // Set permissive CORS headers for static files to allow all origins
@@ -143,27 +145,21 @@ app.use('/uploads', express.static(uploadsPath, {
       case '.bmp':
         res.setHeader('Content-Type', 'image/bmp');
         break;
+      case '.docx':
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        break;
       default:
         // Don't set content-type for unknown files, let express.static handle it
         break;
     }
     
-    // Debug logging
-    console.log(`📁 Static file: ${path.basename(filePath)} | Content-Type: ${res.getHeader('Content-Type')} | Size: ${stat.size} bytes`);
-  }
-}));
-
-// Also serve from backend/uploads for complaint photos and other uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-  setHeaders: (res, filePath, stat) => {
-    // Same CORS headers for consistency
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
-  }
+    // Debug logging for production troubleshooting
+    console.log(`📁 Static file served: ${path.basename(filePath)} | Content-Type: ${res.getHeader('Content-Type')} | Size: ${stat.size} bytes | Path: ${filePath}`);
+  },
+  // Enable directory index for debugging (remove in production)
+  index: false,
+  // Set max age for caching
+  maxAge: process.env.NODE_ENV === 'production' ? '1d' : '1h'
 }));
 
 // API Routes

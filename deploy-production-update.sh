@@ -75,18 +75,26 @@ print_success "Frontend built successfully"
 # Step 4: Back to root directory
 cd ..
 
-# Step 5: Fix missing upload files (handle 404 errors)
-print_status "Step 4: Fixing missing upload files..."
-if [[ -f "fix-missing-upload-files.sh" ]]; then
+# Step 5: Fix upload files accessibility (handle 404 errors)
+print_status "Step 5: Fixing upload files accessibility..."
+if [[ -f "fix-production-uploads.sh" ]]; then
+    chmod +x fix-production-uploads.sh
+    sudo ./fix-production-uploads.sh
+    print_success "Upload files accessibility fix completed"
+elif [[ -f "fix-missing-upload-files.sh" ]]; then
     chmod +x fix-missing-upload-files.sh
     ./fix-missing-upload-files.sh
     print_success "Upload files fix completed"
 else
-    print_warning "fix-missing-upload-files.sh not found, skipping upload fix"
+    print_warning "Upload fix script not found"
+    print_status "Manual steps needed:"
+    print_status "1. Check uploads directory permissions"
+    print_status "2. Verify Nginx configuration for /uploads/ location"  
+    print_status "3. Restart Nginx and PM2 services"
 fi
 
-# Step 6: Restart PM2 services
-print_status "Step 5: Restarting PM2 services..."
+# Step 6: Restart PM2 services  
+print_status "Step 6: Restarting PM2 services..."
 
 if command -v pm2 &> /dev/null; then
     # Find the correct PM2 process
@@ -184,3 +192,31 @@ else
 fi
 
 print_success "Production deployment script completed! 🚀"
+
+
+
+sudo sed -i '/server {/,/^}$/{
+      /^}$/{
+          i\
+      # Static file serving for uploads\
+      location /uploads/ {\
+          alias /opt/ult-fpeb/uploads/;\
+          expires 30d;\
+          add_header Cache-Control "public, no-transform";\
+          add_header Access-Control-Allow-Origin "*";\
+          \
+          # Handle missing files gracefully\
+          try_files $uri $uri/ =404;\
+          \
+          # Security headers\
+          add_header X-Content-Type-Options nosniff;\
+          add_header X-Frame-Options DENY;\
+          \
+          # Allow common image formats\
+          location ~* \\.(jpg|jpeg|png|gif|ico|svg|webp)$ {\
+              expires 1y;\
+              add_header Cache-Control "public, immutable";\
+          }\
+      }
+      }
+  }' /etc/nginx/sites-available/ult-fpeb
